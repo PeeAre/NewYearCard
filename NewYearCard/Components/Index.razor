@@ -1,5 +1,22 @@
 ﻿@page "/"
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
 
 <div class="main-content">
-    <h1>Hello, world!</h1>
+    <canvas id="renderCanvas"></canvas>
 </div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadBabylonSceneAsync();
+        }
+    }
+
+    private async Task LoadBabylonSceneAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("loadBabylon", "renderCanvas");
+    }
+}
