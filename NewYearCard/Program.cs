@@ -1,6 +1,4 @@
-﻿using NewYearCard;
-
-namespace MyBlazorApp
+﻿namespace NewYearCard
 {
     public class Program
     {
@@ -13,7 +11,6 @@ namespace MyBlazorApp
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseStaticWebAssets();
                     webBuilder.UseStartup<Startup>();
                 });
     }

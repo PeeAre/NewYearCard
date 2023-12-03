@@ -29,8 +29,12 @@
             }
 
             app.UseCors(builder => builder.AllowAnyOrigin());
-            app.UseStaticFiles();
             app.UseRouting();
+            app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                ServeUnknownFileTypes = true
+            });
             app.UseHttpsRedirection();
             app.UseEndpoints(endpoints =>
             {
