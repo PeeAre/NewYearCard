@@ -1,54 +1,46 @@
-﻿precision highp float;
+﻿// Фрагментный шейдер (Noise.fragment.fx)
+precision highp float;
 
+uniform sampler2D textureSampler;
+uniform float time;
 varying vec2 vUV;
-uniform sampler2D maskSampler;
-uniform vec2 vResolution;
-uniform float iTime;
 
-void main()
-{
-    vec2 st = gl_FragCoord.xy / vResolution.xy;
-    st.x *= vResolution.x / 8.0;
+// Функция для генерации псевдослучайного числа
+float random(vec2 co) {
+    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
 
-    vec2 grid = vec2(100.0, 16.0);
-    st *= grid;
+void main(void) {
+    vec2 uv = vUV;
 
-    vec2 ipos = floor(st);
-    vec2 fpos = fract(st);
+    // Генерируем случайное значение на основе координаты текстуры и времени
+    float random_value = random(uv + floor(time));
 
-    vec2 vel = vec2(iTime * max(grid.x, grid.y));
-    vel *= vec2(1.0, -1.0) * fract(sin(ipos.y + 36.0));
+    // Порог для определения, где применять помехи
+    float threshold = 0.05;
 
-    vec2 offset = vec2(0.8, 0.0);
+    if (random_value < threshold) {
+        // Если случайное значение меньше порога, применяем помехи
+        // Увеличиваем значение шума для более резких изменений
+        float distortionX = sin(uv.y * 100.0 + time) * 10.0;
 
-    float frequency = 0.32;
-
-    vec3 color = vec3(0.0);
-    color.r = step(0.96, fract(sin(dot(st + offset + vel, vec2(12.9898, 78.233))) * 43758.5453 + cos(iTime * frequency) * sin(iTime * frequency)));
-    color.g = step(0.96, fract(sin(dot(st + vel, vec2(12.9898, 78.233))) * 43758.5453 + cos(iTime * frequency) * sin(iTime * frequency)));
-    color.b = step(0.96, fract(sin(dot(st - offset + vel, vec2(12.9898, 78.233))) * 43758.5453 + cos(iTime * frequency) * sin(iTime * frequency)));
-
-    color *= step(0.5, fpos.y);
-
-    vec4 combinedPattern = vec4(
-        color.r,
-        color.g,
-        color.b,
-        0.6
-    );
-
-    vec4 maskColor = texture2D(maskSampler, vUV);
-    if (maskColor.a < 0.5) {
-        // Инвертируем цвет, если пиксель вне маски
-        gl_FragColor.rgb = vec3(1.0 - vec3(combinedPattern.r, combinedPattern.g, combinedPattern.b));
-        gl_FragColor.a = 1.0 - combinedPattern.a;  // Инвертируем альфа-канал
-    } else {
-        // Иначе используем ваш обычный цвет
-        gl_FragColor.rgb = vec3(combinedPattern.r, combinedPattern.g, combinedPattern.b);
-        gl_FragColor.a = combinedPattern.a;
+        // Используем цвета соседних пикселей для создания фрагментированных помех
+        vec4 color = vec4(
+            texture2D(textureSampler, uv).r,
+            texture2D(textureSampler, uv).g,
+            texture2D(textureSampler, uv).b,
+            1.0
+        );
+        gl_FragColor = color;
     }
+    else {
+        // Если случайное значение не меньше порога, применяем ваш код
+        float random_value = random(vec2(floor(uv.y * 4.0), time * 0.01));
 
-// Используем clamp, чтобы убедиться, что значение альфа-канала остается в пределах [0, 1]
-    gl_FragColor.a = clamp(gl_FragColor.a, 0.0, 1.0);
-
+        if (random_value < 0.04) {
+            gl_FragColor = texture2D(textureSampler, vec2(uv.x + random_value * 0.4, uv.y - random_value * 0.2));
+        } else {
+            gl_FragColor = texture2D(textureSampler, uv);
+        }
+    }
 }
